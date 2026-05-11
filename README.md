@@ -25,7 +25,15 @@ Tasky is a fully client-side task management app built with pure Vanilla JS, CSS
 | 💾 Offline Storage | All data saved to `localStorage` — no database, no account, no cloud required |
 
 ---
+## 📷 Visual appearence of the application
 
+![Tasky Preview](assets/dark-mode.png)
+
+
+
+![Tasky Preview](assets/preview.png)
+
+---
 ## 🛠️ Tech Stack
 
 ### Frontend — `Tasky.html`
