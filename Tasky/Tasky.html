@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0f0f13;--bg2:#1a1a22;--bg3:#24242f;--bg4:#2e2e3d;
+--text:#f0eef8;--text2:#a09cb8;--text3:#6b6880;
+--border:#3a3850;--border2:#4a4768;
+--accent:#7c6af5;--accent2:#9d8fff;
+--shadow:0 4px 24px rgba(0,0,0,0.4);
+--r:10px;--card-r:8px;
+}
+.light{
+--bg:#f5f4fb;--bg2:#eeedf8;--bg3:#e6e4f5;--bg4:#dddbe8;
+--text:#1a1830;--text2:#5a5878;--text3:#9a98b0;
+--border:#cccae0;--border2:#b0aed0;
+--accent:#5b48e8;--accent2:#7c6af5;
+--shadow:0 4px 24px rgba(80,70,180,0.12);
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:600px;transition:background .3s,color .3s}
+#app{padding:16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.logo{font-size:18px;font-weight:700;letter-spacing:-.5px;color:var(--text)}
+.logo span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+.xp-bar-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 16px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.xp-level{font-size:13px;font-weight:700;color:var(--accent2);min-width:56px}
+.xp-track{flex:1;height:8px;background:var(--bg3);border-radius:10px;overflow:hidden}
+.xp-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s cubic-bezier(.4,0,.2,1)}
+.xp-score{font-size:13px;font-weight:600;color:var(--text);min-width:80px;text-align:right}
+.xp-score span{color:var(--accent2)}
+.xp-total{font-size:11px;color:var(--text3)}
+
+.theme-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.theme-btn:hover{background:var(--bg4);border-color:var(--accent)}
+.add-task-main{background:var(--accent);border:none;color:#fff;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .2s}
+.add-task-main:hover{opacity:.85}
+
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.column{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;min-height:280px;transition:background .2s}
+.column.drag-over{background:var(--bg3);border-color:var(--accent)}
+.col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.col-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text2)}
+.col-count{background:var(--bg3);color:var(--text2);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.col-add{background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 2px;transition:color .2s}
+.col-add:hover{color:var(--accent)}
+.cards-wrap{display:flex;flex-direction:column;gap:8px;min-height:40px}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--card-r);padding:12px;cursor:grab;transition:all .2s;position:relative}
+.card:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.card.dragging{opacity:.35;cursor:grabbing}
+.card.done-card{opacity:.7}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.card-title{font-size:14px;font-weight:500;line-height:1.4;flex:1;color:var(--text)}
+.card.done-card .card-title{text-decoration:line-through;color:var(--text3)}
+.card-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s;flex-shrink:0}
+.card:hover .card-actions{opacity:1}
+.card-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px;border-radius:4px;transition:all .2s;line-height:1}
+.card-btn:hover{color:var(--text);background:var(--bg3)}
+.card-btn.del:hover{color:#e04a4a;background:rgba(224,74,74,.12)}
+.card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.priority-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.p-critical{background:#3d1515;color:#f87a7a}.light .p-critical{background:#fde8e8;color:#c0392b}
+.p-high{background:#3a2010;color:#f5a05a}.light .p-high{background:#fef3e2;color:#e67e22}
+.p-medium{background:#1e2e14;color:#7dcc55}.light .p-medium{background:#eafce1;color:#27ae60}
+.p-low{background:#12213a;color:#5ab0f5}.light .p-low{background:#e5f3ff;color:#2980b9}
+.reminder-badge{font-size:10px;padding:2px 7px;border-radius:20px;display:flex;align-items:center;gap:3px}
+.reminder-overdue{background:#3d1515;color:#f87a7a}.light .reminder-overdue{background:#fde8e8;color:#c0392b}
+.reminder-soon{background:#3a2010;color:#f5a05a}.light .reminder-soon{background:#fef3e2;color:#e67e22}
+.reminder-ok{background:#12213a;color:#5ab0f5}.light .reminder-ok{background:#e5f3ff;color:#2980b9}
+.xp-gain-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:#1e2e14;color:#7dcc55;font-weight:700}.light .xp-gain-badge{background:#eafce1;color:#27ae60}
+.xp-loss-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:#3d1515;color:#f87a7a;font-weight:700}.light .xp-loss-badge{background:#fde8e8;color:#c0392b}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px)}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px;width:100%;max-width:400px;box-shadow:0 16px 48px rgba(0,0,0,.5)}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:18px;color:var(--text)}
+.field{margin-bottom:14px}
+.field label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;transition:border-color .2s;font-family:inherit}
+.field textarea{resize:vertical;min-height:65px;max-height:110px}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field select option{background:var(--bg2)}
+.modal-btns{display:flex;gap:8px;margin-top:18px}
+.btn-save{flex:1;background:var(--accent);border:none;color:#fff;padding:10px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;transition:opacity .2s}
+.btn-save:hover{opacity:.85}
+.btn-cancel{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:10px;border-radius:6px;cursor:pointer;font-size:14px;transition:all .2s}
+.btn-cancel:hover{background:var(--bg4)}
+
+.toast-wrap{position:fixed;top:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--text);box-shadow:var(--shadow);animation:slidein .3s ease;max-width:300px;pointer-events:all;cursor:pointer}
+.toast.warn{border-color:#f5a05a;background:#3a2010}.light .toast.warn{background:#fef3e2;border-color:#e67e22;color:#7a4010}
+.toast.danger{border-color:#f87a7a;background:#3d1515}.light .toast.danger{background:#fde8e8;border-color:#c0392b;color:#7a1010}
+.toast.success{border-color:#7dcc55;background:#1e2e14}.light .toast.success{background:#eafce1;border-color:#27ae60;color:#1a5010}
+.toast.info{border-color:var(--accent)}
+.toast-title{font-weight:600;margin-bottom:2px}
+@keyframes slidein{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.empty-col{text-align:center;color:var(--text3);font-size:12px;padding:16px 8px;border:1.5px dashed var(--border);border-radius:6px;cursor:pointer;transition:all .2s}
+.empty-col:hover{border-color:var(--accent);color:var(--accent2)}
+.float-xp{position:fixed;font-size:18px;font-weight:800;pointer-events:none;z-index:300;animation:floatup .9s ease forwards}
+@keyframes floatup{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.3)}}
+@media(max-width:520px){.board{grid-template-columns:1fr}.card-actions{opacity:1}}
+
+/* Na pura huye kaarya ka sthal */
+.dustbin-btn{
+  position:relative;
+  background:var(--bg3);
+  border:2px dashed var(--border);
+  color:var(--text3);
+  padding:7px 14px;
+  border-radius:20px;
+  cursor:default;
+  font-size:16px;
+  font-weight:600;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  display:flex;align-items:center;gap:6px;
+  user-select:none;
+  overflow:hidden;
+}
+.dustbin-btn .bin-label{
+  font-size:11px;font-weight:600;letter-spacing:.4px;
+  color:var(--text3);transition:color .25s;
+  white-space:nowrap;
+}
+.dustbin-btn.drag-active{
+  border-color:#e04a4a;
+  background:rgba(224,74,74,.08);
+  color:#e04a4a;
+  transform:scale(1.06);
+  box-shadow:0 0 0 3px rgba(224,74,74,.18);
+}
+.dustbin-btn.drag-active .bin-label{color:#e04a4a;}
+.dustbin-btn.drag-active-nodone{
+  border-color:var(--border2);
+  background:var(--bg3);
+  color:var(--text3);
+  cursor:not-allowed;
+  opacity:.55;
+}
+.dustbin-btn.drop-flash{
+  animation:binflash .45s ease;
+}
+@keyframes binflash{
+  0%{background:rgba(224,74,74,.25);border-color:#e04a4a;}
+  50%{background:rgba(224,74,74,.45);transform:scale(1.12);}
+  100%{background:transparent;}
+}
+.bin-icon{font-size:18px;line-height:1;transition:transform .25s;}
+.dustbin-btn.drag-active .bin-icon{transform:rotate(-15deg) scale(1.15);}
+.dustbin-btn.not-allowed-shake{animation:binshake .4s ease;}
+@keyframes binshake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+</style>
+
+</head><body><div id="app">
+<div class="topbar">
+  <div class="logo">kan<span>ban</span></div>
+  <div class="topbar-right">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙 Dark</button>
+    <button class="theme-btn" id="notifBtn" onclick="requestNotifPermission()" title="Enable desktop notifications" style="display:none">🔔 Enable Alerts</button>
+    <span id="serverBadge" style="font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;border:1px solid var(--border);color:var(--text3);cursor:default;transition:all .3s" title="Checking notifier server...">⚪ Notifier Off</span>
+    <div class="dustbin-btn" id="dustbinZone"
+      ondragover="dustbinDragOver(event)"
+      ondragleave="dustbinDragLeave(event)"
+      ondrop="dustbinDrop(event)">
+      <span class="bin-icon">🗑️</span>
+      <span class="bin-label">Drop to delete</span>
+    </div>
+    <button class="add-task-main" onclick="openModal()">+ New Task</button>
+  </div>
+</div>
+
+<div class="xp-bar-wrap">
+  <div class="xp-level" id="xpLevel">Lvl 1</div>
+  <div class="xp-track"><div class="xp-fill" id="xpFill" style="width: 50%;"></div></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end">
+    <div class="xp-score"><span id="xpVal">100</span> XP</div>
+    <div class="xp-total" id="xpSub">Next level: 200 XP</div>
+  </div>
+</div>
+
+<div class="board" id="board"></div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+  <h3 id="modalTitle">New Task</h3>
+  <div class="field"><label>Title</label><input id="fTitle" placeholder="What needs to be done?"></div>
+  <div class="field"><label>Description</label><textarea id="fDesc" placeholder="Optional details..."></textarea></div>
+  <div class="field"><label>Column</label>
+    <select id="fCol">
+      <option value="todo">To Do</option>
+      <option value="inprogress">In Progress</option>
+      <option value="done">Done</option>
+    </select>
+  </div>
+  <div class="field"><label>Priority</label>
+    <select id="fPriority">
+      <option value="low">🔵 Low</option>
+      <option value="medium" selected="">🟢 Medium</option>
+      <option value="high">🟠 High</option>
+      <option value="critical">🔴 Critical</option>
+    </select>
+  </div>
+  <div class="field"><label>Deadline (Reminder)</label><input type="datetime-local" id="fReminder"></div>
+  <div class="modal-btns">
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    <button class="btn-save" onclick="saveTask()">Save Task</button>
+  </div>
+</div>
+</div>
+
+<script>
+const COLS=[
+  {id:'todo',title:'To Do',color:'#7c6af5'},
+  {id:'inprogress',title:'In Progress',color:'#5ab0f5'},
+  {id:'done',title:'Done',color:'#7dcc55'}
+];
+
+// DATA PERSISTENCE
+const SERVER = 'http://localhost:3000';
+let serverAvailable = false;
+
+// Check if local notifier server is running
+async function detectServer() {
+  try {
+    const res = await fetch(SERVER + '/tasks', { signal: AbortSignal.timeout(1200) });
+    if (res.ok) {
+      serverAvailable = true;
+      updateServerBadge(true);
+      // Load tasks from server (more up-to-date than localStorage)
+      const data = await res.json();
+      if (data.tasks && data.tasks.length > 0) {
+        tasks = data.tasks;
+        if (data.xp !== undefined) xp = data.xp;
+        localStorage.setItem('kb_tasks', JSON.stringify(tasks));
+        localStorage.setItem('kb_xp', xp.toString());
+        render();
+      }
+    }
+  } catch (e) {
+    serverAvailable = false;
+    updateServerBadge(false);
+  }
+}
+
+function updateServerBadge(online) {
+  let badge = document.getElementById('serverBadge');
+  if (!badge) return;
+  if (online) {
+    badge.textContent = '🟢 Notifier On';
+    badge.title = 'Local notification server is running — deadlines will fire even when browser is closed';
+    badge.style.color = 'var(--accent2)';
+    badge.style.borderColor = 'var(--accent2)';
+  } else {
+    badge.textContent = '⚪ Notifier Off';
+    badge.title = 'Local server not running. Run: node server.js in the tasky-notifier folder to enable background notifications';
+    badge.style.color = 'var(--text3)';
+    badge.style.borderColor = 'var(--border)';
+  }
+}
+
+function saveToStorage() {
+  localStorage.setItem('kb_tasks', JSON.stringify(tasks));
+  localStorage.setItem('kb_xp', xp.toString());
+  localStorage.setItem('kb_theme', theme);
+  // Also sync to local notification server if available
+  if (serverAvailable) {
+    fetch(SERVER + '/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tasks, xp }),
+      signal: AbortSignal.timeout(2000)
+    }).catch(() => { serverAvailable = false; updateServerBadge(false); });
+  }
+}
+
+function loadFromStorage() {
+  const sTasks = localStorage.getItem('kb_tasks');
+  const sXp = localStorage.getItem('kb_xp');
+  const sTheme = localStorage.getItem('kb_theme');
+
+  if (sTasks) tasks = JSON.parse(sTasks);
+  if (sXp) xp = parseInt(sXp);
+  if (sTheme) {
+    theme = sTheme;
+    document.body.classList.toggle('light', theme === 'light');
+    document.getElementById('themeBtn').textContent = theme === 'dark' ? '🌙 Dark' : '☀️ Light';
+  }
+}
+
+let xp=100;
+let tasks=[
+  {id:'t1',title:'Design system update',desc:'Revamp color tokens and spacing scale',col:'todo',priority:'high',reminder:null,xpAwarded:false,xpPenalized:false},
+  {id:'t2',title:'API integration',desc:'Connect payment gateway endpoints',col:'inprogress',priority:'critical',reminder:null,xpAwarded:false,xpPenalized:false},
+  {id:'t3',title:'Fix login bug',desc:'Token refresh failing on mobile',col:'todo',priority:'critical',reminder:null,xpAwarded:false,xpPenalized:false},
+  {id:'t4',title:'Deploy to staging',desc:'Run smoke tests after deploy',col:'done',priority:'low',reminder:null,xpAwarded:true,xpPenalized:false},
+];
+
+let dragId=null,editId=null,theme='dark',reminderTimers={};
+
+function uid(){return 't'+Date.now()+Math.random().toString(36).slice(2,6)}
+
+function getLevel(){
+  const lvl=Math.floor(xp/200)+1;
+  const base=(lvl-1)*200;
+  const next=lvl*200;
+  const pct=Math.min(100,Math.round(((xp-base)/(next-base))*100));
+  return{lvl,pct,next};
+}
+
+function renderXP(){
+  const{lvl,pct,next}=getLevel();
+  document.getElementById('xpLevel').textContent=`Lvl ${lvl}`;
+  document.getElementById('xpFill').style.width=pct+'%';
+  document.getElementById('xpVal').textContent=xp;
+  document.getElementById('xpSub').textContent=`Next level: ${next} XP`;
+}
+
+function floatXP(text,color,x,y){
+  const el=document.createElement('div');
+  el.className='float-xp';
+  el.style.cssText=`left:${x}px;top:${y}px;color:${color}`;
+  el.textContent=text;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+
+function checkDeadlinePenalty(task){
+  if(!task.reminder||task.xpPenalized||task.xpAwarded)return;
+  if(task.col!=='done'&&new Date(task.reminder)<new Date()){
+    task.xpPenalized=true;
+    xp=Math.max(0,xp-10);
+    renderXP();
+    saveToStorage();
+    showToast('danger',task.title,'-10 XP — missed deadline!');
+  }
+}
+
+function render(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  COLS.forEach(col=>{
+    const colTasks=tasks.filter(t=>t.col===col.id);
+    const div=document.createElement('div');
+    div.className='column';
+    div.dataset.col=col.id;
+    div.addEventListener('dragover',e=>{e.preventDefault();div.classList.add('drag-over')});
+    div.addEventListener('dragleave',e=>{if(!div.contains(e.relatedTarget))div.classList.remove('drag-over')});
+    div.addEventListener('drop',e=>{
+      e.preventDefault();div.classList.remove('drag-over');
+      if(!dragId)return;
+      const t=tasks.find(x=>x.id===dragId);
+      if(!t)return;
+      const fromCol=t.col;
+      t.col=col.id;
+      if(col.id==='done'&&fromCol!=='done'&&!t.xpAwarded){
+        t.xpAwarded=true;
+        const onTime=!t.reminder||new Date(t.reminder)>=new Date();
+        const gain=5;
+        xp=Math.max(0,xp+gain);
+        renderXP();
+        const rect=div.getBoundingClientRect();
+        floatXP('+'+gain+' XP','#7dcc55',rect.left+rect.width/2-20,rect.top+40);
+        showToast('success',t.title,`+${gain} XP — task completed!`+(onTime?' On time! 🎉':''));
+      } else if(col.id!=='done'&&fromCol==='done'&&t.xpAwarded){
+        t.xpAwarded=false;
+        xp=Math.max(0,xp-5);
+        renderXP();
+        showToast('warn',t.title,'-5 XP — moved back from done');
+      }
+      saveToStorage();
+      render();
+    });
+    const header=document.createElement('div');header.className='col-header';
+    header.innerHTML=`<span class="col-title" style="border-left:3px solid ${col.color};padding-left:8px">${col.title}</span><div style="display:flex;align-items:center;gap:6px"><span class="col-count">${colTasks.length}</span><button class="col-add" onclick="openModal('${col.id}')" title="Add task">+</button></div>`;
+    div.appendChild(header);
+    const wrap=document.createElement('div');wrap.className='cards-wrap';
+    if(colTasks.length===0){
+      const emp=document.createElement('div');emp.className='empty-col';emp.textContent='Drop here or click + to add';emp.onclick=()=>openModal(col.id);wrap.appendChild(emp);
+    } else {
+      colTasks.forEach(t=>{
+        const card=document.createElement('div');
+        card.className='card'+(t.col==='done'?' done-card':'');
+        card.draggable=true;card.dataset.id=t.id;
+        card.addEventListener('dragstart',()=>{dragId=t.id;setTimeout(()=>card.classList.add('dragging'),0)});
+        card.addEventListener('dragend',()=>{dragId=null;card.classList.remove('dragging');const bin=document.getElementById('dustbinZone');if(bin)bin.classList.remove('drag-active','drag-active-nodone');});
+        const rem=getReminderMeta(t.reminder,t.col);
+        const xpTag=t.xpAwarded?`<span class="xp-gain-badge">+5 XP ✓</span>`:
+          (t.xpPenalized?`<span class="xp-loss-badge">-10 XP ✗</span>`:'');
+        card.innerHTML=`<div class="card-top"><span class="card-title">${t.title}</span><div class="card-actions"><button class="card-btn" onclick="openModal(null,'${t.id}')" title="Edit">✏️</button><button class="card-btn del" onclick="deleteTask('${t.id}')" title="Delete">🗑</button></div></div>${t.desc?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px;line-height:1.5">${t.desc}</div>`:''}<div class="card-meta"><span class="priority-badge p-${t.priority}">${t.priority}</span>${rem?`<span class="reminder-badge reminder-${rem.cls}">⏰ ${rem.label}</span>`:''} ${xpTag}</div>`;
+        wrap.appendChild(card);
+      });
+    }
+    div.appendChild(wrap);board.appendChild(div);
+  });
+  renderXP();
+}
+
+function getReminderMeta(dt,col){
+  if(!dt)return null;
+  const diff=new Date(dt)-Date.now();
+  if(col==='done')return null;
+  if(diff<0)return{cls:'overdue',label:'Overdue'};
+  if(diff<3600000)return{cls:'soon',label:'< 1h'};
+  return{cls:'ok',label:formatDT(dt)};
+}
+function formatDT(dt){if(!dt)return'';const d=new Date(dt);return d.toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+
+function openModal(col,tid){
+  editId=tid||null;
+  const t=tid?tasks.find(x=>x.id===tid):null;
+  document.getElementById('modalTitle').textContent=t?'Edit Task':'New Task';
+  document.getElementById('fTitle').value=t?t.title:'';
+  document.getElementById('fDesc').value=t?(t.desc||''):'';
+  document.getElementById('fCol').value=t?t.col:(col||'todo');
+  document.getElementById('fPriority').value=t?t.priority:'medium';
+  document.getElementById('fReminder').value=t&&t.reminder?t.reminder.slice(0,16):'';
+  document.getElementById('modalOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('fTitle').focus(),50);
+}
+function closeModal(){document.getElementById('modalOverlay').style.display='none';editId=null}
+
+function saveTask(){
+  const title=document.getElementById('fTitle').value.trim();
+  if(!title){document.getElementById('fTitle').style.borderColor='#e04a4a';setTimeout(()=>document.getElementById('fTitle').style.borderColor='',1500);return;}
+  const reminder=document.getElementById('fReminder').value?document.getElementById('fReminder').value:null;
+  if(editId){
+    const t=tasks.find(x=>x.id===editId);
+    t.title=title;t.desc=document.getElementById('fDesc').value.trim();
+    t.col=document.getElementById('fCol').value;t.priority=document.getElementById('fPriority').value;t.reminder=reminder;
+    clearTimeout(reminderTimers[editId]);
+    if(reminder)scheduleReminder(t);
+  } else {
+    const t={id:uid(),title,desc:document.getElementById('fDesc').value.trim(),col:document.getElementById('fCol').value,priority:document.getElementById('fPriority').value,reminder,xpAwarded:false,xpPenalized:false};
+    tasks.push(t);
+    if(reminder)scheduleReminder(t);
+    if(t.col==='done'){t.xpAwarded=true;xp=Math.max(0,xp+5);renderXP();}
+  }
+  saveToStorage();
+  closeModal();render();
+}
+
+function deleteTask(id){
+  tasks=tasks.filter(t=>t.id!==id);
+  clearTimeout(reminderTimers[id]);
+  clearTimeout(reminderTimers['w'+id]);
+  saveToStorage();
+  render();
+}
+
+function scheduleReminder(task){
+  if(!task.reminder)return;
+  const diff=new Date(task.reminder)-Date.now();
+  if(diff<=0){
+    if(!task.xpPenalized&&!task.xpAwarded&&task.col!=='done'){
+      task.xpPenalized=true;xp=Math.max(0,xp-10);renderXP();saveToStorage();
+      showToast('danger',task.title,'-10 XP — deadline passed!');
+      desktopNotify(task.title,'⏰ Deadline already passed! -10 XP','danger');
+    }
+    return;
+  }
+  const warn=diff-300000;
+  if(warn>0)reminderTimers['w'+task.id]=setTimeout(()=>{
+    showToast('warn',task.title,'Deadline in 5 minutes! ⏰');
+    desktopNotify(task.title,'⚠️ Deadline in 5 minutes! Get it done!','warn');
+  },warn);
+  reminderTimers[task.id]=setTimeout(()=>{
+    showToast('danger',task.title,'⏰ Deadline reached!');
+    desktopNotify(task.title,'🚨 Deadline reached! Task overdue.','danger');
+    if(task.col!=='done'&&!task.xpPenalized&&!task.xpAwarded){
+      task.xpPenalized=true;xp=Math.max(0,xp-10);renderXP();saveToStorage();
+    }
+    render();
+  },diff);
+}
+
+function showToast(type,title,msg){
+  const wrap=document.getElementById('toasts');
+  const d=document.createElement('div');d.className=`toast ${type}`;
+  d.innerHTML=`<div class="toast-title">${title}</div><div style="font-size:12px;opacity:.85">${msg}</div>`;
+  wrap.appendChild(d);setTimeout(()=>d.remove(),4500);
+}
+
+function toggleTheme(){
+  theme=theme==='dark'?'light':'dark';
+  document.body.classList.toggle('light',theme==='light');
+  document.getElementById('themeBtn').textContent=theme==='dark'?'🌙 Dark':'☀️ Light';
+  saveToStorage();
+}
+
+// DESKTOP NOTIFICATIONS
+function initNotifBtn(){
+  const btn=document.getElementById('notifBtn');
+  if(!('Notification' in window)){btn.style.display='none';return;}
+  if(Notification.permission==='granted'){btn.style.display='none';}
+  else if(Notification.permission==='denied'){btn.style.display='none';}
+  else{btn.style.display='inline-flex';}
+}
+
+function requestNotifPermission(){
+  if(!('Notification' in window))return;
+  Notification.requestPermission().then(perm=>{
+    const btn=document.getElementById('notifBtn');
+    if(perm==='granted'){
+      btn.style.display='none';
+      showToast('success','Notifications enabled','You\'ll get desktop alerts for deadlines 🔔');
+      new Notification('Tasky — Notifications Active 🔔',{body:'You\'ll be notified about task deadlines even when the page is in the background.',icon:'https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/1f4cb.png'});
+    } else {
+      btn.style.display='none';
+      showToast('warn','Notifications blocked','Enable them in browser settings for deadline alerts');
+    }
+  });
+}
+
+function desktopNotify(title, body, type){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const icons={
+    warn:'https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/23f0.png',
+    danger:'https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/1f6a8.png',
+    success:'https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/2705.png',
+    info:'https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/1f4cb.png'
+  };
+  try{
+    const n=new Notification('Tasky — '+title,{
+      body,
+      icon:icons[type]||icons.info,
+      badge:icons.info,
+      tag:title+body, // dedup same notif
+      requireInteraction: type==='danger' // deadline alerts stay until dismissed
+    });
+    n.onclick=()=>{window.focus();n.close();};
+  }catch(e){}
+}
+
+// DUSTBIN DRAG-TO-DELETE (done tasks only)
+function dustbinDragOver(e){
+  e.preventDefault();
+  const bin=document.getElementById('dustbinZone');
+  const t=tasks.find(x=>x.id===dragId);
+  if(t&&t.col==='done'){
+    bin.classList.add('drag-active');
+    bin.classList.remove('drag-active-nodone');
+    e.dataTransfer.dropEffect='move';
+  } else {
+    bin.classList.add('drag-active-nodone');
+    bin.classList.remove('drag-active');
+    e.dataTransfer.dropEffect='none';
+  }
+}
+
+function dustbinDragLeave(e){
+  const bin=document.getElementById('dustbinZone');
+  bin.classList.remove('drag-active','drag-active-nodone');
+}
+
+function dustbinDrop(e){
+  e.preventDefault();
+  const bin=document.getElementById('dustbinZone');
+  bin.classList.remove('drag-active','drag-active-nodone');
+  if(!dragId)return;
+  const t=tasks.find(x=>x.id===dragId);
+  if(!t){return;}
+  if(t.col!=='done'){
+    bin.classList.add('not-allowed-shake');
+    setTimeout(()=>bin.classList.remove('not-allowed-shake'),420);
+    showToast('warn',t.title,'Only ✅ Done tasks can be deleted by dragging');
+    return;
+  }
+  bin.classList.add('drop-flash');
+  setTimeout(()=>bin.classList.remove('drop-flash'),480);
+  const title=t.title;
+  deleteTask(t.id);
+  showToast('danger',title,'Task deleted 🗑️');
+}
+
+// BOOT
+loadFromStorage();
+initNotifBtn();
+detectServer();
+setInterval(detectServer, 30000); // recheck server status every 30s
+tasks.forEach(t=>{if(t.reminder)scheduleReminder(t)});
+setInterval(()=>{tasks.forEach(t=>checkDeadlinePenalty(t));render();},30000);
+render();
+</script>
+</body></html>

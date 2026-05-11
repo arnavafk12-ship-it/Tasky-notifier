@@ -1,0 +1,13 @@
+{
+  "name": "tasky-notifier",
+  "version": "1.0.0",
+  "description": "Local notification server for Tasky — fires native desktop alerts for deadlines",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "node-notifier": "^10.0.1"
+  }
+}
